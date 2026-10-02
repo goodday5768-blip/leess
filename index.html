@@ -46,6 +46,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset
 .teacher[hidden]{display:none}
 .codecard{margin:0 0 16px;padding:16px;border:1px solid var(--acc);border-radius:14px;background:var(--acc2)}
 .codecard[hidden]{display:none}
+.codelink[hidden]{display:none}
 .codecard h2{margin:0 0 6px;font-size:17px}
 .codecard p{margin:0 0 10px;font-size:14px;color:var(--sub)}
 .codecard .row{display:flex;gap:8px}
@@ -158,6 +159,7 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
     }
     try { sessionStorage.setItem('hub:back', location.href); } catch (err) {}
   });
+  if (!T) { var cc = $('codeChange'); if (cc) cc.remove(); }   // 학생 통합앱엔 선생님 코드 단추가 없다(10-02 — display:block이 hidden을 덮어 보이던 결함)
   function showCode(m) { $('codeCard').hidden = false; $('codeMsg').textContent = m || ''; $('codeIn').focus(); window.scrollTo(0, 0); }
   if (T) {
     $('codeChange').hidden = false;

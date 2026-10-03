@@ -30,13 +30,26 @@
   var app = (location.pathname.split('/')[1] || '').toLowerCase();
   var R = window.LEESS_ROSTER;
   var list = function () { return R && R.naesin && Array.isArray(R.naesin[app]) ? R.naesin[app] : null; };
+  var hx = function (n) { return sha256(R.salt + n).slice(0, 16); };
+  // 예외(모든 앱 허용, 명단에는 안 보임): 이 기기에서 한 번 확인되면 'leess-me'에 기억 → 이 기기 드롭다운에만 나타난다
+  var isX = function (n) { return !!(R && n && (R.x || []).indexOf(hx(n)) >= 0); };
+  var xApp = function () { return !(R && (R.exact || []).indexOf(app) >= 0); };
+  var me = function () { try { return norm(localStorage.getItem('leess-me') || ''); } catch (e) { return ''; } };
+  var remember = function (n) { try { if (isX(n)) localStorage.setItem('leess-me', n); } catch (e) {} };
+  try { var q = new URLSearchParams(location.search).get('me'); if (q) remember(norm(q)); } catch (e) {}   // 주소 뒤 ?me=이름 으로도 기억
   window.LEESS = {
     app: app, sha256: sha256,
-    apply: function (cfg) { if (R && cfg) cfg.roster = list() ? list().slice() : []; },   // 내신 = 학교·학년 명단 드롭다운, 수업 = 빈 명단(직접 입력)
+    apply: function (cfg) {   // 내신 = 학교·학년 명단 드롭다운, 수업 = 빈 명단(직접 입력)
+      if (!R || !cfg) return;
+      var L = list() ? list().slice() : [], m = me();
+      if (list() && xApp() && isX(m) && L.indexOf(m) < 0) L.push(m);
+      cfg.roster = L;
+    },
     ok: function (name) {
       var n = norm(name); if (!n) return false; if (!R) return true;   // 명단을 못 불러오면 막지 않는다(사용자 지시 10-03)
-      var L = list(); if (L) return L.some(function (x) { return norm(x) === n; });
-      return R.h.indexOf(sha256(R.salt + n).slice(0, 16)) >= 0;
+      var L = list();
+      if (L) return L.some(function (x) { return norm(x) === n; }) || (xApp() && isX(n));
+      var ok = R.h.indexOf(hx(n)) >= 0; if (ok) remember(n); return ok;
     },
     msg: function () {
       var L = list();

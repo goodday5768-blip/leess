@@ -49,6 +49,20 @@
       var L = list() ? list().slice() : [], m = me();
       if (list() && xApp() && isX(m) && L.indexOf(m) < 0) L.push(m);
       cfg.roster = L;
+      // 10-08: 내신 명단은 앱 열쇠로 암호화해 실린다(R.ne[앱]). 이 기기에 열쇠가 있으면(한 번 시작한 뒤) 풀어 드롭다운으로 — 처음 쓰는 기기는 직접 입력
+      var enc = R.ne && R.ne[app]; if (!enc || !cfg.salt || !window.crypto || !crypto.subtle) return;
+      var k = ''; try { k = JSON.parse(localStorage.getItem('ex:' + cfg.salt + ':k') || '""'); } catch (e) {}
+      if (!k || String(k).length !== 64) return;
+      try {
+        var b = Uint8Array.from(atob(enc), function (c) { return c.charCodeAt(0); }), kb = Uint8Array.from(String(k).match(/../g), function (x) { return parseInt(x, 16); });
+        crypto.subtle.importKey('raw', kb, 'AES-GCM', false, ['decrypt'])
+          .then(function (key) { return crypto.subtle.decrypt({name: 'AES-GCM', iv: b.slice(0, 12)}, key, b.slice(12)); })
+          .then(function (buf) {
+            var names = JSON.parse(new TextDecoder().decode(buf)); if (!Array.isArray(names)) return;
+            if (xApp() && isX(m) && names.indexOf(m) < 0) names.push(m);
+            cfg.roster = names; window.dispatchEvent(new CustomEvent('leess-roster', {detail: names.length}));
+          }).catch(function () {});
+      } catch (e) {}
     },
     ok: function (name) {
       var n = norm(name); if (!n) return false; if (!R) return true;   // 명단을 못 불러오면 막지 않는다(사용자 지시 10-03)

@@ -1,7 +1,9 @@
 /* 수강생 확인(2026-10-03) — 게시 주소 /leess/gate.js. 명단 자료는 /leess/roster.js(매일 sync_roster.py가 REGISTER 학생명단에서 만든다).
    내신관리 앱: roster.js의 naesin[앱]이 이름 드롭다운이 된다. 수업관리 앱: 명단을 보여 주지 않고, 직접 쓴 이름의 해시가 h에 있어야 시작된다.
    전주비전대 앱(R.vapps): 학원 명단 대신 대학 수강 명단 해시(R.v)로 확인. 이름 칸이 없는 워크북은 LEESS.wall()이 처음에 이름을 묻는다.
-   roster.js·gate.js를 못 불러오면(인터넷 끊김 등) 확인 없이 시작을 허용한다. */
+   roster.js·gate.js를 못 불러오면(인터넷 끊김 등) 확인 없이 시작을 허용한다.
+   2026-10-08: 내신 앱도 실명 드롭다운 대신 「직접 입력 + 해시(R.nh[앱])」로 확인(공개 파일에 실명 없음). 해시는 sha256을 R.it번 반복(사전 공격 비용 ↑).
+   전주비전대 앱(R.vapps)도 대학 수강 명단(R.v)에 있는 이름만 시작한다(10-08 사용자 결정, 10-06 예외 폐기). */
 (function () {
   var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   function sha256(str) {
@@ -30,8 +32,9 @@
   var norm = function (s) { return String(s || '').normalize('NFC').replace(/\s+/g, ''); };
   var app = (location.pathname.split('/')[1] || '').toLowerCase();
   var R = window.LEESS_ROSTER;
-  var list = function () { return R && R.naesin && Array.isArray(R.naesin[app]) ? R.naesin[app] : null; };
-  var hx = function (n) { return sha256(R.salt + n).slice(0, 16); };
+  var list = function () { return R && R.naesin && Array.isArray(R.naesin[app]) && R.naesin[app].length ? R.naesin[app] : null; };   // 옛 형식(실명 목록)만; 10-08부터 비어 있다
+  var nh = function () { return R && R.nh && Array.isArray(R.nh[app]) ? R.nh[app] : null; };   // 내신 앱: 학교·학년 명단 해시
+  var hx = function (n) { var h = sha256(R.salt + n), it = (R.it || 1); for (var i = 1; i < it; i++) h = sha256(h); return h.slice(0, 16); };
   // 예외(모든 앱 허용, 명단에는 안 보임): 이 기기에서 한 번 확인되면 'leess-me'에 기억 → 이 기기 드롭다운에만 나타난다
   var isX = function (n) { return !!(R && n && (R.x || []).indexOf(hx(n)) >= 0); };
   var V = !!(R && (R.vapps || []).indexOf(app) >= 0);   // 전주비전대 앱
@@ -49,13 +52,18 @@
     },
     ok: function (name) {
       var n = norm(name); if (!n) return false; if (!R) return true;   // 명단을 못 불러오면 막지 않는다(사용자 지시 10-03)
-      if (V) return (R.v || []).indexOf(hx(n)) >= 0 || isX(n);
+      if (V) return (R.v || []).indexOf(hx(n)) >= 0 || isX(n);   // 전주비전대: 대학 수강 명단(해시)에 있는 이름만(10-08 사용자 결정)
+      var NH = nh();
+      if (NH) { var okn = NH.indexOf(hx(n)) >= 0 || (xApp() && isX(n)); if (okn) remember(n); return okn; }
       var L = list();
       if (L) return L.some(function (x) { return norm(x) === n; }) || (xApp() && isX(n));
       var ok = R.h.indexOf(hx(n)) >= 0; if (ok) remember(n); return ok;
     },
     msg: function () {
       if (V) return '수강 명단에 없는 이름입니다. 학교에 등록된 실명을 띄어쓰기 없이 정확히 입력하세요.';
+      var NH = nh();
+      if (NH && !NH.length) return '지금은 이 앱을 이용할 수 있는 등록 학생이 없습니다. 선생님께 문의하세요.';
+      if (NH) return '이 학교·학년 수강생 명단에 없는 이름입니다. 학원에 등록한 이름(실명)을 띄어쓰기 없이 정확히 입력하세요.';
       var L = list();
       if (L && !L.length) return '지금은 이 앱을 이용할 수 있는 등록 학생이 없습니다. 선생님께 문의하세요.';
       if (L) return '명단에서 본인 이름을 선택해야 시작할 수 있습니다.';

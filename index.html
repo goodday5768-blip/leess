@@ -109,7 +109,14 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
   var T = CAT.mode === 'teacher', CK = 'leess:tcode';   // 선생님 앱: 코드는 이 기기에만(공개 페이지·주소에 넣지 않는다)
-  function code() { try { return JSON.parse(localStorage.getItem(CK) || '""'); } catch (e) { return ''; } }
+  function code() {   // 11-04: 예전 학습 현황이 따옴표 없이 써 둔 코드도 읽고 JSON으로 고쳐 둔다(그 전엔 빈 값으로 보여 날마다 코드를 다시 물었다)
+    var v = null; try { v = localStorage.getItem(CK); } catch (e) {}
+    if (!v) return '';
+    var c; try { c = JSON.parse(v); } catch (e) { c = v; }
+    c = String(typeof c === 'string' ? c : v).trim();   // 숫자 코드가 날것으로 있으면 JSON.parse가 숫자를 준다
+    if (c && v !== JSON.stringify(c)) try { localStorage.setItem(CK, JSON.stringify(c)); } catch (e) {}
+    return c;
+  }
   function appUrl(a) { return location.origin + '/' + (/\.html$/.test(a) ? a : a.replace(/\/?$/, '/')); }
   function find(path) {   // path = ['naesin', '2026-2-1'] → 그 칸까지의 줄
     var trail = [CAT], cur = CAT;

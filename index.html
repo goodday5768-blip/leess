@@ -165,10 +165,7 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
     $('crumb').innerHTML = cr;
     var h = trail.length > 1 ? '<button type="button" class="ghost back" id="up">‹ 뒤로</button>' : '';
     h += '<div class="list' + (trail.length === 1 ? ' main' : '') + '">';
-    if (trail.length === 1 && !T) {   // 최근에 푼 앱(11-02): 이 기기의 시험·워크북 기록이 있는 앱을 최근 순으로 4개
-      var rec = recent();
-      if (rec.length) h += '<div class="label">최근에 푼 앱</div>' + rec.map(function (x) { return item(x.c, []); }).join('') + '<div class="label">전체</div>';
-    }
+    // 11-06 사용자: 「최근에 푼 앱」은 뺀다 — 오늘 할 일 앱에서 바로 들어가도록 권장
     (node.children || []).forEach(function (c) { h += c.label ? '<div class="label">' + esc(c.label) + '</div>' : item(c, ids); });
     $('view').innerHTML = h + '</div>';
     var up = $('up');

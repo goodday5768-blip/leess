@@ -184,6 +184,19 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
     }
     try { sessionStorage.setItem('hub:back', location.href); } catch (err) {}
   });
+  // 11-06 사용자 「내 아이폰·맥북·아이패드는 누구 이름으로 들어가든 경고가 오지 않게」: 선생님 앱은 앱을 같은 창에서 열어
+  // 그 앱들의 기기ID(앱마다 따로 만든 「…device」 값)가 이 저장소에 남는다 → 선생님 코드와 함께 서버에 보내 「선생님 기기」로 등록.
+  // 서버는 이 기기ID면 어떤 이름이든 기기 판정·경고를 하지 않는다(코드가 맞을 때만 등록). 학생 통합앱에서는 돌지 않는다.
+  function sendDevs() {
+    var c = T && code(); if (!c || !CAT.check || !CAT.check.url) return;
+    var ids = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (!/(^|:)device$/.test(k)) continue;
+      var v = localStorage.getItem(k); try { v = JSON.parse(v); } catch (e) {} if (typeof v === 'string' && /^[A-Za-z0-9.-]{3,40}$/.test(v) && ids.indexOf(v) < 0) ids.push(v); } } catch (e) {}
+    ids.sort(); var sig = ids.join(',');
+    try { if (!ids.length || localStorage.getItem('leess:tdevs') === sig) return; } catch (e) {}
+    fetch(CAT.check.url, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({event: 'tdev', code: c, devs: ids})})
+      .then(function (r) { return r.json(); }).then(function (j) { if (j && j.ok) try { localStorage.setItem('leess:tdevs', sig); } catch (e) {} }).catch(function () {});
+  }
   if (!T) { var cc = $('codeChange'); if (cc) cc.remove(); }   // 학생 통합앱엔 선생님 코드 단추가 없다(10-02 — display:block이 hidden을 덮어 보이던 결함)
   function showCode(m) { $('codeCard').hidden = false; $('codeMsg').textContent = m || ''; $('codeIn').focus(); window.scrollTo(0, 0); }
   if (T) {
@@ -198,10 +211,12 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
       $('codeOk').disabled = false;
       if (ok === false) { $('codeMsg').textContent = '코드가 맞지 않습니다.'; return; }
       try { localStorage.setItem(CK, JSON.stringify(c)); } catch (err) {}
+      sendDevs();
       $('codeCard').hidden = true; $('codeIn').value = '';
       if (ok === null) alert('서버에 연결하지 못해 확인은 못 했지만 저장했습니다. 코드가 틀리면 앱에서 다시 알려 줍니다.');
     };
     $('codeIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('codeOk').click(); });
+    sendDevs(); addEventListener('pageshow', sendDevs); document.addEventListener('visibilitychange', function () { if (!document.hidden) sendDevs(); });
   }
   addEventListener('hashchange', render);
   render();

@@ -129,7 +129,7 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
     if (c && v !== JSON.stringify(c)) try { localStorage.setItem(CK, JSON.stringify(c)); } catch (e) {}
     return c;
   }
-  function appUrl(a) { return location.origin + '/' + (/\.html$/.test(a) ? a : a.replace(/\/?$/, '/')); }
+  function appUrl(a) { return location.origin + '/' + (/\.html([?#]|$)/.test(a) ? a : a.replace(/\/?$/, '/')); }
   function find(path) {   // path = ['naesin', '2026-2-1'] → 그 칸까지의 줄
     var trail = [CAT], cur = CAT;
     for (var i = 0; i < path.length; i++) {

@@ -333,6 +333,20 @@ var CAT = {"title": "이승수 영어 시험앱", "short": "이승수영어", "t
   addEventListener('appinstalled', function () { bar.hidden = link.hidden = true; hide(); });
 })();
 </script>
+<div id="toApp" hidden style="margin:22px auto 8px;max-width:640px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card);font-size:calc(14px*var(--fz,1));line-height:1.6">
+<b>📱 이승수영어 앱을 설치했나요?</b><br>앱에서 처음 한 번만 아래 단추를 누르세요. 이 브라우저에서 쓰던 시험앱 기록(기기 번호)을 앱으로 옮겨, 앱이 새 기기로 막히지 않습니다.
+<button type="button" id="toAppGo" style="display:block;width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#5E1A33;color:#fff;font:inherit;font-weight:600">이승수영어 앱으로 옮기기</button>
+</div>
+<script>/* 2026-11-14 학원 앱(이승수영어, ~/ws/noteapp Academy): 사파리·홈 화면 앱에서만 보인다. leessenglish://open?dv=<이 브라우저의 모든 시험앱 기기 번호> → 앱이 자기 웹 저장소에 넣는다(없는 것만) */
+(function () {
+  if (window.__inkNative) return;
+  var ua = navigator.userAgent, ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!ios) return;
+  var box = document.getElementById('toApp'); if (!box) return;
+  box.hidden = false;
+  document.getElementById('toAppGo').onclick = function () { location.href = 'leessenglish://open?dv=' + (HUBDV.pack() || '%7B%7D'); };
+})();
+</script>
 <script id="bookNoteJs">/* ink2.js — 필기 엔진 2판(2026-11-13 「확대해도 굿노트처럼」). 저장 형식과 붙는 쪽(inknote2.js·inkpage2.js) 약속은 1판 ink.js와 같다.
    1판이 확대에서 깨진 까닭: 모든 계산을 「문서 1px = 화면 1pt」로 가정했다. 사파리로 화면을 확대하면 ① 쓰는 중인 획을 그리는 고정 캔버스가
    엉뚱한 자리·크기가 되고(사파리는 좌표는 보이는 화면 기준, 고정 요소는 원래 화면 기준) ② 짧은 획이 「누르기」로 버려지며 아래 단추가 눌리고
